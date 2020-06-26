@@ -214,6 +214,8 @@ export function submitForm(fields, searchTraces) {
     endDateTime,
     operation,
     tags,
+    site,
+    node,
     minDuration,
     maxDuration,
     lookback,
@@ -240,6 +242,10 @@ export function submitForm(fields, searchTraces) {
 
   trackFormInput(resultsLimit, operation, tags, minDuration, maxDuration, lookback);
 
+  let updatedTags = tags;
+  if (node && site) {
+    updatedTags = `${tags} hostname=(${site})(-(${node}))?[.].*[.].*`;
+  }
   searchTraces({
     service,
     operation: operation !== DEFAULT_OPERATION ? operation : undefined,
@@ -247,7 +253,9 @@ export function submitForm(fields, searchTraces) {
     lookback,
     start,
     end,
-    tags: convTagsLogfmt(tags) || undefined,
+    site,
+    node,
+    tags: convTagsLogfmt(updatedTags) || undefined,
     minDuration: minDuration || null,
     maxDuration: maxDuration || null,
   });
@@ -348,6 +356,13 @@ export class SearchFormImpl extends React.PureComponent {
             placeholder="http.status_code=200 error=true"
             props={{ disabled }}
           />
+        </FormItem>
+
+        <FormItem label="Site">
+          <Field name="site" component={AdaptedInput} placeholder="daily" props={{ disabled }} />
+        </FormItem>
+        <FormItem label="Node">
+          <Field name="node" component={AdaptedInput} placeholder="node-1" props={{ disabled }} />
         </FormItem>
 
         <FormItem label="Lookback">
@@ -494,6 +509,8 @@ export function mapStateToProps(state) {
     start,
     end,
     operation,
+    site,
+    node,
     tag: tagParams,
     tags: logfmtTags,
     maxDuration,
@@ -501,7 +518,6 @@ export function mapStateToProps(state) {
     lookback,
     traceID: traceIDParams,
   } = queryString.parse(state.router.location.search);
-
   const nowInMicroseconds = moment().valueOf() * 1000;
   const today = formatDate(nowInMicroseconds);
   const currentTime = formatTime(nowInMicroseconds);
@@ -594,6 +610,8 @@ export function mapStateToProps(state) {
       endDateTime: queryEndDateTime || currentTime,
       operation: operation || lastSearchOperation || DEFAULT_OPERATION,
       tags,
+      site,
+      node,
       minDuration: minDuration || null,
       maxDuration: maxDuration || null,
       traceIDs: traceIDs || null,
